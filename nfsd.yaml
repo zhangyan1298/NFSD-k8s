@@ -1,0 +1,52 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+ name: nfs-share
+ labels:
+  app: nfs-share
+spec:
+ selector:
+  matchLabels:
+   app: nfs-share
+  matchExpressions:
+   - {key: app,operator: In,values: [nfs-share]}
+ template:
+  metadata:
+   name: nfs-share
+   labels:
+    app: nfs-share
+  spec:
+   affinity:
+    nodeAffinity:
+     requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - "192.168.0.5"
+   containers:
+    - name: nfs-share
+      image: itsthenetwork/nfs-server-alpine
+      imagePullPolicy: IfNotPresent
+      securityContext:
+        privileged: true
+      resources:
+       limits:
+        cpu: "0.2"
+        memory: "200Mi"
+       requests:
+        cpu: "0.1"
+        memory: "150Mi" 
+      ports:
+      - containerPort: 2049
+      volumeMounts:
+      - name: nfs-dir
+        mountPath: /nfsshare
+      env:
+       - name: SHARED_DIRECTORY
+         value: /nfsshare
+   volumes:
+   - name: nfs-dir
+     hostPath:
+      path: /mnt/nfs
